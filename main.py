@@ -8,37 +8,55 @@ import numpy as np
 import time
 import sys
 import os
+from pathlib import Path
 
-CONFIDENCE = 0.4
+CONFIDENCE = 0.6
 SCORE_THRESHOLD = 0.5
 IOU_THRESHOLD = 0.5
 MINIMUM_WIDTH = 20
 MINIMUM_HEIGHT = 40
 
 # конфигурация нейронной сети
-config_path = "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\model\\config\\yolov3.cfg"
+config_path = "./model/config/yolov3.cfg"
 # файл весов сети YOLO
-weights_path = "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\model\\weights\\yolov3.weights"
+weights_path = "./model/weights/yolov3.weights"
 # weights_path = "weights/yolov3-tiny.weights"
-path_names = [
-    "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\test\\001-bad",
-    "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\test\\002-bad.jpg",
-    "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\test\\003-bad.jpg",
-    "C:\\Users\\sirdo\\PycharmProjects\\Poshki-Hackathon-AI-2023\\test\\004-bad.jpg"
-]
+video_path = "./test/input/11_50_20.mp4"
+input_frames_path = "./test/input/frames/"
+output_frames_path = "./test/output/frames/"
+output_video_path = "./test/output/output.mp4"
+coco_names_path = "./data/coco.names"
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # разделение видео на отдельные кадры
 
-
+    capture = cv2.VideoCapture(video_path)
+    frameCounter = -1
+    while True:
+        frameCounter = frameCounter + 1
+        success, frame = capture.read()
+        if not success:
+            break
+        if frameCounter % 12 == 0:
+            cv2.imwrite(f'{input_frames_path}frame_{frameCounter}.jpg', frame)
+    capture.release()
 
     # загрузка всех меток классов (объектов)
-    labels = open("data/coco.names").read().strip().split("\n")
+    labels = open(coco_names_path).read().strip().split("\n")
     # генерируем цвета для каждого объекта и последующего построения
     colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
     # загружаем сеть YOLO
     net = cv2.dnn.readNetFromDarknet(config_path, weights_path)
+    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+
+    path_names = []
+    for (path, _, filenames) in os.walk(input_frames_path):
+        path_names.extend(os.path.join(path, name) for name in filenames)
+    path_names = [Path(i) for i in path_names]
+    path_names = sorted(path_names, key=lambda i: int(i.stem))
+    path_names = [str(i) for i in path_names]
 
     for path_name in path_names:
 
@@ -48,7 +66,7 @@ if __name__ == '__main__':
         height, width = image.shape[:2]
 
         # нормализация изображения
-        blob = cv2.dnn.blobFromImage(image, 1/255.0, (1024, 1024), swapRB=True, crop=False)
+        blob = cv2.dnn.blobFromImage(image, 1/255.0, (320, 320), swapRB=True, crop=False)
 
         # получение прогнозов
         net.setInput(blob)
@@ -57,7 +75,7 @@ if __name__ == '__main__':
         start = time.perf_counter()
         layer_outputs = net.forward(layerNames)
         time_took = time.perf_counter() - start
-        print(f"Потребовалось: {time_took:.2f}s")
+        print(f"{path_name}: {time_took:.2f}s")
 
         # фильтруем то что больше CONFIDENCE
         font_scale = 1
@@ -93,7 +111,8 @@ if __name__ == '__main__':
             cv2.rectangle(overlay, box_coords[0], box_coords[1], color=color, thickness=cv2.FILLED)
             image = cv2.addWeighted(overlay, 0.6, image, 0.4, 0)
             cv2.putText(image, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, fontScale=font_scale, color=(0, 0, 0), thickness=thickness)
-        cv2.imwrite(file_name + "_yolo3.png", image)
+
+        cv2.imwrite(output_frames_path + file_name, image)
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
