@@ -30,7 +30,7 @@ while True:
     if not success:
         break
     frameCounter = frameCounter + 1
-    if frameCounter % 12 == 0:
+    if frameCounter % 48 == 0:
         # Сохраняем изображение для отправки в API
         cv2.imwrite(f'{WORKING_FRAME_DIRECTORY}frame_{frameCounter}.jpg', image)
         temporaryImagePath = f'{WORKING_FRAME_DIRECTORY}frame_{frameCounter}.jpg'
