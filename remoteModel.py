@@ -8,8 +8,8 @@ from roboflow import Roboflow
 # Параметры программы
 ROBOFLOW_API_KEY = "vOKeVrZ9227xTYal9FFO"
 ROBOFLOW_PROJECT_NAME = "trains-qjwao"
-VIDEO_PATH = "./test/input/11_50_20.mp4"
-WORKING_FRAME_DIRECTORY = "./test/output/frames"
+VIDEO_PATH = "./data/input/11_50_20.mp4"
+WORKING_FRAME_DIRECTORY = "./data/output/frames"
 CONFIDENCE = 0.4
 NMS_THRESHOLD = 0.4
 TRAIL_COLOR = (255, 0, 140)
